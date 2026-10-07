@@ -23,15 +23,15 @@ NUM_SITES = 3
 MAX_RADIUS_KM = 10
 UNNAMED = "Unnamed pickleball courts"
 _name_cache = {}
-
+ 
 # Errors from the web services (bad JSON, timeouts, missing fields)
 SERVICE_ERRORS = (requests.RequestException, KeyError, IndexError, ValueError)
  
  
 def _err(msg: str) -> str:
     return json.dumps({"error": msg})
-
-
+ 
+ 
 def _clock(dt: datetime) -> str:
     """12-hour clock like '6:29 PM'."""
     return dt.strftime("%I:%M %p").lstrip("0")
@@ -39,7 +39,7 @@ def _clock(dt: datetime) -> str:
  
 def _resolve(place: str) -> tuple[float, float, str]:
     """Turn 'lat,lon' or a place name/address into (lat, lon, label).
-
+ 
     Raises LookupError if the place can't be found. Network or JSON problems
     raise the usual requests/ValueError errors, which callers handle separately.
     """
@@ -65,13 +65,13 @@ def _km(lat1, lon1, lat2, lon2) -> float:
     p = math.pi / 180
     a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2
     return 12742 * math.asin(math.sqrt(a))
-
-
+ 
+ 
 def _pt(el) -> tuple:
     c = el if "lat" in el else el.get("center", {})
     return c.get("lat"), c.get("lon")
-
-
+ 
+ 
 def _overpass(query: str) -> list:
     """Try each Overpass server in turn. Returns elements, or None if all fail."""
     for url in OVERPASS_URLS:
@@ -80,8 +80,8 @@ def _overpass(query: str) -> list:
         except SERVICE_ERRORS:
             continue
     return None
-
-
+ 
+ 
 def _group_sites(elements: list, lat: float, lon: float) -> list:
     """Group courts within 150 m into one site, nearest site first."""
     sites = []
@@ -106,8 +106,8 @@ def _group_sites(elements: list, lat: float, lon: float) -> list:
     for site in sites:
         site.pop("_pt")
     return sites
-
-
+ 
+ 
 def _park_name(lat: float, lon: float):
     """Name of the park a point is inside (or right next to), from OpenStreetMap. None if not found."""
     queries = [
@@ -120,14 +120,14 @@ def _park_name(lat: float, lon: float):
             if name:
                 return name
     return None
-
-
+ 
+ 
 def _nearby_name(lat: float, lon: float):
     """Name an unnamed court site after its park, or else the street. None if all lookups fail."""
     key = (round(lat, 4), round(lon, 4))
     if key in _name_cache:
         return _name_cache[key]
-
+ 
     name = None
     park = _park_name(lat, lon)
     if park:
@@ -149,7 +149,7 @@ def _nearby_name(lat: float, lon: float):
                 name = f"Courts near {road}"
         except (requests.RequestException, ValueError, AttributeError):
             pass
-
+ 
     if name:
         _name_cache[key] = name
     return name
@@ -163,7 +163,7 @@ def find_pickleball_courts(area: str, radius_km: float = 3) -> str:
         return _err(str(e))
     except SERVICE_ERRORS:
         return _err("The place lookup service failed. Try again in a moment.")
-
+ 
     radius_km = min(max(radius_km, 0.5), MAX_RADIUS_KM)
     sites = []
     while True:
@@ -177,15 +177,15 @@ def find_pickleball_courts(area: str, radius_km: float = 3) -> str:
         if len(sites) >= NUM_SITES or radius_km >= MAX_RADIUS_KM:
             break
         radius_km = min(radius_km * 2, MAX_RADIUS_KM)
-
+ 
     if not sites:
         return _err(f"No pickleball courts found within {MAX_RADIUS_KM} km of {label}. OpenStreetMap coverage is incomplete; try a nearby neighborhood or borough instead.")
-
+ 
     for site in sites[:NUM_SITES]:
         if site["name"] == UNNAMED:
             lat_s, lon_s = site["lat_lon"].split(",")
             site["name"] = _nearby_name(float(lat_s), float(lon_s)) or "Pickleball courts"
-
+ 
     result = {"searched_near": label, "search_radius_km": radius_km, "sites": sites[:NUM_SITES]}
     try:
         s = _sun(lat, lon)
@@ -237,6 +237,41 @@ def get_sun_times(location: str) -> str:
     })
  
  
+def _route(mode: str, slat, slon, clat, clon) -> tuple[float, float, bool]:
+    """(minutes, km, is_estimate). Real route if the routing server works, otherwise a straight-line estimate."""
+    try:
+        route = requests.get(
+            ROUTING.format(profile=PROFILES[mode], a=f"{slon},{slat}", b=f"{clon},{clat}"),
+            headers=HEADERS, timeout=15,
+        ).json()["routes"][0]
+        return route["duration"] / 60, route["distance"] / 1000, False
+    except SERVICE_ERRORS:
+        dist_km = _km(slat, slon, clat, clon) * 1.3  # streets are longer than a straight line
+        return dist_km / FALLBACK_KMH[mode] * 60, dist_km, True
+ 
+ 
+def get_distance_to_court(start_location: str, court_location: str, mode: str = "walking") -> str:
+    """Distance and travel time between where the user is and a court."""
+    if mode not in PROFILES:
+        return _err(f"mode must be one of {list(PROFILES)}, got '{mode}'.")
+    try:
+        slat, slon, slabel = _resolve(start_location)
+        clat, clon, clabel = _resolve(court_location)
+    except LookupError as e:
+        return _err(str(e))
+    except SERVICE_ERRORS:
+        return _err("Could not look up the locations. Check both are real places, then retry.")
+    minutes, dist_km, estimated = _route(mode, slat, slon, clat, clon)
+    return json.dumps({
+        "from": slabel, "to": clabel, "mode": mode,
+        "distance_km": round(dist_km, 2),
+        "distance_miles": round(dist_km * 0.621371, 2),
+        "straight_line_km": round(_km(slat, slon, clat, clon), 2),
+        "travel_minutes": round(minutes),
+        "travel_time_is_estimate": estimated,
+    })
+ 
+ 
 def can_i_play_before_dark(start_location: str, court_location: str, mode: str = "walking", leave_in_minutes: int = 0) -> str:
     """Work out how much daylight is left once you travel to a court."""
     if mode not in PROFILES:
@@ -249,18 +284,9 @@ def can_i_play_before_dark(start_location: str, court_location: str, mode: str =
         return _err(str(e))
     except SERVICE_ERRORS:
         return _err("Could not look up the locations or sunset. Check both are real places, then retry.")
-
-    # Real route if the routing server works, otherwise a straight-line estimate.
-    try:
-        route = requests.get(
-            ROUTING.format(profile=PROFILES[mode], a=f"{slon},{slat}", b=f"{clon},{clat}"),
-            headers=HEADERS, timeout=15,
-        ).json()["routes"][0]
-        minutes, dist_km, estimated = route["duration"] / 60, route["distance"] / 1000, False
-    except SERVICE_ERRORS:
-        dist_km = _km(slat, slon, clat, clon) * 1.3  # streets are longer than a straight line
-        minutes, estimated = dist_km / FALLBACK_KMH[mode] * 60, True
-
+ 
+    minutes, dist_km, estimated = _route(mode, slat, slon, clat, clon)
+ 
     now, sunset = sun["now"], sun["sunset"]
     arrive = now + timedelta(minutes=leave_in_minutes + minutes)
     left = int((sunset - arrive).total_seconds() // 60)
@@ -299,6 +325,12 @@ TOOLS = [
           "Get the CURRENT local time at a place, today's sunrise and sunset, tomorrow's sunset, and whether it is dark right now. Call this first to know what time it is.",
           {"location": {"type": "string", "description": "Place name or 'lat,lon'"}},
           ["location"]),
+    _tool("get_distance_to_court",
+          "Get the travel distance (km and miles) and travel time between where the user is and a specific court. Use when the user asks how far a court is from them or from an address. Does not look at sunset; use can_i_play_before_dark for that.",
+          {"start_location": {"type": "string", "description": "Where the user is (address, place or 'lat,lon')"},
+           "court_location": {"type": "string", "description": "The court: a name, address, or the 'lat,lon' from find_pickleball_courts"},
+           "mode": {"type": "string", "enum": list(PROFILES), "description": "How the user travels. Default walking."}},
+          ["start_location", "court_location"]),
     _tool("can_i_play_before_dark",
           "Calculate travel time to a court and how many minutes of daylight remain after arriving. Reports if it is already dark. Use for 'can I get a game in before dark?'.",
           {"start_location": {"type": "string", "description": "Where the user is leaving from (address, place or 'lat,lon')"},
@@ -309,7 +341,8 @@ TOOLS = [
 ]
  
 TOOL_MAP = {"find_pickleball_courts": find_pickleball_courts, "get_sun_times": get_sun_times,
-            "can_i_play_before_dark": can_i_play_before_dark}
+            "can_i_play_before_dark": can_i_play_before_dark,
+            "get_distance_to_court": get_distance_to_court}
  
  
 def run_tool(name: str, args: dict) -> str:

@@ -180,7 +180,11 @@
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
             let sessionId = null;
-
+ 
+            function scrollToBottom() {
+                messages.scrollTop = messages.scrollHeight;
+            }
+ 
             function addMessage(role, text, isLoading = false) {
                 const div = document.createElement("div");
                 div.className =
@@ -194,10 +198,10 @@
                     text +
                     "</div>";
                 messages.appendChild(div);
-                messages.scrollTop = messages.scrollHeight;
+                scrollToBottom();
                 return div;
             }
-
+ 
             // Show a map card for each court site the agent found
             function addLocations(result, before) {
                 let data;
@@ -207,7 +211,7 @@
                     return;
                 }
                 if (!data.sites || !data.sites.length) return;
-
+ 
                 const wrap = document.createElement("div");
                 wrap.className = "locations";
                 const caption = document.createElement("div");
@@ -219,20 +223,20 @@
                     data.searched_near +
                     ":";
                 wrap.appendChild(caption);
-
+ 
                 const grid = document.createElement("div");
                 grid.className = "loc-grid";
                 for (const site of data.sites.slice(0, 3)) {
                     const q = encodeURIComponent(site.lat_lon);
                     const card = document.createElement("div");
                     card.className = "loc-card";
-
+ 
                     const map = document.createElement("iframe");
                     map.src = "https://maps.google.com/maps?q=" + q + "&z=16&output=embed";
                     map.loading = "lazy";
                     map.title = "Map of " + site.name;
                     card.appendChild(map);
-
+ 
                     const info = document.createElement("div");
                     info.className = "loc-info";
                     const name = document.createElement("b");
@@ -255,17 +259,18 @@
                 }
                 wrap.appendChild(grid);
                 messages.insertBefore(wrap, before);
+                scrollToBottom();
             }
-
+ 
             async function send() {
                 const text = userInput.value.trim();
                 if (!text) return;
-
+ 
                 userInput.value = "";
                 sendBtn.disabled = true;
                 addMessage("you", text);
                 const loading = addMessage("pickle", "Thinking...", true);
-
+ 
                 try {
                     const res = await fetch("/chat", {
                         method: "POST",
@@ -277,7 +282,7 @@
                     });
                     const data = await res.json();
                     sessionId = data.session_id;
-
+ 
                     // Show each tool the harness ran, above the assistant's answer
                     for (const call of data.tool_calls || []) {
                         const div = document.createElement("div");
@@ -292,6 +297,7 @@
                             ),
                         );
                         messages.insertBefore(div, loading);
+                        scrollToBottom();
                         if (call.name === "find_pickleball_courts") {
                             addLocations(call.result, loading);
                         }
@@ -299,15 +305,17 @@
                     loading.querySelector(".content").textContent =
                         data.response;
                     loading.classList.remove("loading");
+                    scrollToBottom();
                 } catch (e) {
                     loading.querySelector(".content").textContent =
                         "Error: " + e.message;
                     loading.classList.remove("loading");
+                    scrollToBottom();
                 }
                 sendBtn.disabled = false;
                 userInput.focus();
             }
-
+ 
             sendBtn.addEventListener("click", send);
             userInput.addEventListener("keydown", function (e) {
                 if (e.key === "Enter") send();
