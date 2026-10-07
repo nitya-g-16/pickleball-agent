@@ -251,7 +251,11 @@
                               : "";
                     info.appendChild(
                         document.createTextNode(
-                            site.distance_km + " km away · " + n + (n === 1 ? " court" : " courts") + lights,
+                            site.distance_km + " km " +
+                                (site.travel_minutes !== undefined
+                                    ? "· " + site.travel_minutes + " min " + data.travel_mode + " · "
+                                    : "away · ") +
+                                n + (n === 1 ? " court" : " courts") + lights,
                         ),
                     );
                     card.appendChild(info);

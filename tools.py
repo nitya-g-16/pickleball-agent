@@ -3,6 +3,7 @@
 import json
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
  
 import requests
@@ -20,6 +21,7 @@ PROFILES = {"walking": "routed-foot", "biking": "routed-bike", "driving": "route
 # Used only if the routing server fails: rough city speeds in km/h
 FALLBACK_KMH = {"walking": 5, "biking": 15, "driving": 25}
 NUM_SITES = 3
+CANDIDATES = 6  # nearest sites (straight line) that get a real travel distance before picking the final 3
 MAX_RADIUS_KM = 10
 UNNAMED = "Unnamed pickleball courts"
 _name_cache = {}
@@ -155,8 +157,10 @@ def _nearby_name(lat: float, lon: float):
     return name
  
  
-def find_pickleball_courts(area: str, radius_km: float = 3) -> str:
-    """Find the 3 nearest pickleball sites, widening the search up to 10 km if needed."""
+def find_pickleball_courts(area: str, radius_km: float = 3, mode: str = "walking") -> str:
+    """Find the 3 pickleball sites with the shortest travel distance, widening the search up to 10 km if needed."""
+    if mode not in PROFILES:
+        return _err(f"mode must be one of {list(PROFILES)}, got '{mode}'.")
     try:
         lat, lon, label = _resolve(area)
     except LookupError as e:
@@ -181,12 +185,28 @@ def find_pickleball_courts(area: str, radius_km: float = 3) -> str:
     if not sites:
         return _err(f"No pickleball courts found within {MAX_RADIUS_KM} km of {label}. OpenStreetMap coverage is incomplete; try a nearby neighborhood or borough instead.")
  
+    # Straight-line distance only shortlists candidates. Rank them by real travel distance.
+    candidates = sites[:CANDIDATES]
+ 
+    def add_travel(site):
+        slat, slon = (float(x) for x in site["lat_lon"].split(","))
+        minutes, km, estimated = _route(mode, lat, lon, slat, slon)
+        site["straight_line_km"] = site["distance_km"]
+        site["distance_km"] = round(km, 2)
+        site["travel_minutes"] = round(minutes)
+        site["travel_is_estimate"] = estimated
+ 
+    with ThreadPoolExecutor(max_workers=CANDIDATES) as pool:
+        list(pool.map(add_travel, candidates))
+    sites = sorted(candidates, key=lambda s: s["distance_km"])
+ 
     for site in sites[:NUM_SITES]:
         if site["name"] == UNNAMED:
             lat_s, lon_s = site["lat_lon"].split(",")
             site["name"] = _nearby_name(float(lat_s), float(lon_s)) or "Pickleball courts"
  
-    result = {"searched_near": label, "search_radius_km": radius_km, "sites": sites[:NUM_SITES]}
+    result = {"searched_near": label, "travel_mode": mode, "ranked_by": f"{mode} travel distance, not straight-line",
+              "search_radius_km": radius_km, "sites": sites[:NUM_SITES]}
     try:
         s = _sun(lat, lon)
         result.update({
@@ -317,9 +337,10 @@ def _tool(name, desc, props, required):
  
 TOOLS = [
     _tool("find_pickleball_courts",
-          "Find the 3 nearest pickleball sites (groups of courts) to a place, closest first, with a name, distance, number of courts, lights and surface. Also returns the current local time, today's and tomorrow's sunset, and is_dark_now. Automatically widens the search up to 10 km if fewer than 3 are nearby. Returns each site's lat_lon, which can be passed to can_i_play_before_dark.",
+          "Find the 3 pickleball sites (groups of courts) with the shortest TRAVEL distance (by street route, not straight-line) from a place, closest first, with a name, distance_km, travel_minutes, number of courts, lights and surface. Also returns the current local time, today's and tomorrow's sunset, and is_dark_now. Automatically widens the search up to 10 km if fewer than 3 are nearby. Returns each site's lat_lon, which can be passed to can_i_play_before_dark.",
           {"area": {"type": "string", "description": "Neighborhood, park or address, e.g. 'Upper West Side, New York'"},
-           "radius_km": {"type": "number", "description": "Starting search radius in km (0.5 to 10). Default 3."}},
+           "radius_km": {"type": "number", "description": "Starting search radius in km (0.5 to 10). Default 3."},
+           "mode": {"type": "string", "enum": list(PROFILES), "description": "How the user travels, used to rank courts by travel distance. Default walking."}},
           ["area"]),
     _tool("get_sun_times",
           "Get the CURRENT local time at a place, today's sunrise and sunset, tomorrow's sunset, and whether it is dark right now. Call this first to know what time it is.",
