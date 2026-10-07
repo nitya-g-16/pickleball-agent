@@ -387,10 +387,7 @@
                               ? " · no lights"
                               : "";
 
-                    /*
-                     * Court count first, then public/private if known.
-                     * Unknown access is completely omitted.
-                     */
+                    // Show public/private only when the tool knows it.
                     const access =
                         site.access &&
                         site.access !== "unknown"
