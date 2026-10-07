@@ -10,12 +10,14 @@
             href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap"
             rel="stylesheet"
         />
+
         <style>
             * {
                 box-sizing: border-box;
                 margin: 0;
                 padding: 0;
             }
+
             body {
                 font-family: "Playfair Display", Georgia, serif;
                 font-weight: 500;
@@ -27,11 +29,13 @@
                 align-items: center;
                 padding: 3rem 1rem;
             }
+
             input,
             button {
                 font-family: inherit;
                 font-weight: 500;
             }
+
             #container {
                 width: 100%;
                 max-width: 1100px;
@@ -40,6 +44,29 @@
                 border: 1.5px solid #06320b;
                 background: #f5f1e8;
             }
+
+            /* Pickle header */
+
+            #header {
+                display: flex;
+                align-items: center;
+                gap: 0.65rem;
+                padding: 1rem 1.5rem;
+                border-bottom: 1.5px solid #06320b;
+                color: #06320b;
+            }
+
+            #logo {
+                width: 34px;
+                height: 34px;
+                flex-shrink: 0;
+            }
+
+            #brand {
+                font-size: 1.25rem;
+                letter-spacing: 0.02em;
+            }
+
             #messages {
                 overflow-y: auto;
                 padding: 2rem;
@@ -49,14 +76,17 @@
                 min-height: 450px;
                 max-height: 70vh;
             }
+
             .msg {
                 line-height: 1.5;
                 max-width: 80%;
             }
+
             .msg.user {
                 align-self: flex-end;
                 text-align: right;
             }
+
             .msg .role {
                 font-size: 0.75rem;
                 text-transform: uppercase;
@@ -64,15 +94,18 @@
                 color: #06320b;
                 margin-bottom: 0.25rem;
             }
+
             .msg.loading .content {
                 color: #06320b;
             }
+
             #input-area {
                 display: flex;
                 gap: 1rem;
                 padding: 1.5rem;
                 border-top: 1.5px solid #06320b;
             }
+
             #user-input {
                 flex: 1;
                 padding: 0.75rem 0;
@@ -83,9 +116,11 @@
                 font-size: 1rem;
                 outline: none;
             }
+
             #user-input:focus {
                 border-bottom-width: 3px;
             }
+
             button {
                 padding: 0.75rem 1.5rem;
                 background: #06320b;
@@ -96,6 +131,7 @@
                 letter-spacing: 0.08em;
                 cursor: pointer;
             }
+
             .tool {
                 font-family: ui-monospace, monospace;
                 font-size: 0.75rem;
@@ -107,15 +143,18 @@
                 white-space: pre-wrap;
                 word-break: break-word;
             }
+
             .tool .label {
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
                 color: #06320b;
             }
+
             .locations {
                 align-self: stretch;
                 margin: 0.25rem 0 0.75rem;
             }
+
             .locations .caption {
                 display: inline-block;
                 font-size: 0.9rem;
@@ -124,20 +163,24 @@
                 padding-bottom: 2px;
                 margin-bottom: 0.75rem;
             }
+
             .loc-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
                 gap: 1rem;
             }
+
             @media (max-width: 700px) {
                 .loc-grid {
                     grid-template-columns: 1fr;
                 }
             }
+
             .loc-card {
                 border: 1.5px solid #06320b;
                 background: #fffdf8;
             }
+
             .loc-card iframe {
                 width: 100%;
                 height: 170px;
@@ -145,26 +188,89 @@
                 border-bottom: 1.5px solid #06320b;
                 display: block;
             }
+
             .loc-info {
                 padding: 0.6rem 0.75rem;
                 font-size: 0.85rem;
                 line-height: 1.5;
                 color: #6b665c;
             }
+
             .loc-info b {
                 display: block;
                 font-weight: 500;
                 font-size: 0.95rem;
                 color: #06320b;
             }
+
             button:disabled {
                 opacity: 0.3;
             }
         </style>
     </head>
+
     <body>
         <div id="container">
+
+            <!-- Pickle header -->
+            <div id="header">
+                <svg
+                    id="logo"
+                    viewBox="0 0 40 40"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-label="Pickleball paddle logo"
+                >
+                    <!-- paddle -->
+                    <path
+                        d="M10 4
+                           C5 6 3 12 5 18
+                           L11 31
+                           C13 35 18 37 22 35
+                           L27 33
+                           C31 31 32 26 30 22
+                           L23 9
+                           C21 4 15 2 10 4Z"
+                        fill="none"
+                        stroke="#06320b"
+                        stroke-width="2"
+                    />
+
+                    <!-- paddle holes -->
+                    <circle cx="11" cy="11" r="1.3" fill="#06320b" />
+                    <circle cx="17" cy="10" r="1.3" fill="#06320b" />
+                    <circle cx="9" cy="17" r="1.3" fill="#06320b" />
+                    <circle cx="15" cy="16" r="1.3" fill="#06320b" />
+                    <circle cx="21" cy="15" r="1.3" fill="#06320b" />
+                    <circle cx="13" cy="22" r="1.3" fill="#06320b" />
+                    <circle cx="19" cy="21" r="1.3" fill="#06320b" />
+
+                    <!-- handle -->
+                    <path
+                        d="M22 30 L29 37"
+                        stroke="#06320b"
+                        stroke-width="3"
+                        stroke-linecap="square"
+                    />
+
+                    <!-- pickleball -->
+                    <circle
+                        cx="31"
+                        cy="10"
+                        r="5"
+                        fill="none"
+                        stroke="#06320b"
+                        stroke-width="2"
+                    />
+                    <circle cx="29" cy="8" r="0.9" fill="#06320b" />
+                    <circle cx="33" cy="8" r="0.9" fill="#06320b" />
+                    <circle cx="31" cy="11" r="0.9" fill="#06320b" />
+                </svg>
+
+                <div id="brand">Pickle</div>
+            </div>
+
             <div id="messages"></div>
+
             <div id="input-area">
                 <input
                     type="text"
@@ -175,155 +281,233 @@
                 <button id="send-btn">Send</button>
             </div>
         </div>
+
         <script>
             const messages = document.getElementById("messages");
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
             let sessionId = null;
- 
+
             function scrollToBottom() {
-                messages.scrollTop = messages.scrollHeight;
+                messages.scrollTo({
+                    top: messages.scrollHeight,
+                    behavior: "smooth"
+                });
             }
- 
+
             function addMessage(role, text, isLoading = false) {
                 const div = document.createElement("div");
+
                 div.className =
                     "msg " +
                     (role === "you" ? "user" : "pickle") +
                     (isLoading ? " loading" : "");
+
                 div.innerHTML =
                     '<div class="role">' +
                     role +
                     '</div><div class="content">' +
                     text +
                     "</div>";
+
                 messages.appendChild(div);
                 scrollToBottom();
+
                 return div;
             }
- 
+
             // Show a map card for each court site the agent found
             function addLocations(result, before) {
                 let data;
+
                 try {
                     data = JSON.parse(result);
                 } catch (e) {
                     return;
                 }
+
                 if (!data.sites || !data.sites.length) return;
- 
+
                 const wrap = document.createElement("div");
                 wrap.className = "locations";
+
                 const caption = document.createElement("div");
                 caption.className = "caption";
+
                 caption.textContent =
                     "Here " +
-                    (data.sites.length === 1 ? "is the location" : "are the locations") +
+                    (data.sites.length === 1
+                        ? "is the location"
+                        : "are the locations") +
                     " near " +
                     data.searched_near +
                     ":";
+
                 wrap.appendChild(caption);
- 
+
                 const grid = document.createElement("div");
                 grid.className = "loc-grid";
+
                 for (const site of data.sites.slice(0, 3)) {
                     const q = encodeURIComponent(site.lat_lon);
+
                     const card = document.createElement("div");
                     card.className = "loc-card";
- 
+
                     const map = document.createElement("iframe");
-                    map.src = "https://maps.google.com/maps?q=" + q + "&z=16&output=embed";
+                    map.src =
+                        "https://maps.google.com/maps?q=" +
+                        q +
+                        "&z=16&output=embed";
+
                     map.loading = "lazy";
                     map.title = "Map of " + site.name;
+
                     card.appendChild(map);
- 
+
                     const info = document.createElement("div");
                     info.className = "loc-info";
+
                     const name = document.createElement("b");
                     name.textContent = site.name;
+
                     info.appendChild(name);
+
                     const n = site.courts_at_site;
+
                     const lights =
                         site.has_lights === "yes"
                             ? " · lit"
                             : site.has_lights === "no"
                               ? " · no lights"
                               : "";
+
                     info.appendChild(
                         document.createTextNode(
-                            site.distance_km + " km " +
+                            site.distance_km +
+                                " km " +
                                 (site.travel_minutes !== undefined
-                                    ? "· " + site.travel_minutes + " min " + data.travel_mode + " · "
+                                    ? "· " +
+                                      site.travel_minutes +
+                                      " min " +
+                                      data.travel_mode +
+                                      " · "
                                     : "away · ") +
-                                n + (n === 1 ? " court" : " courts") + lights,
-                        ),
+                                n +
+                                (n === 1 ? " court" : " courts") +
+                                lights
+                        )
                     );
+
                     card.appendChild(info);
                     grid.appendChild(card);
                 }
+
                 wrap.appendChild(grid);
                 messages.insertBefore(wrap, before);
+
                 scrollToBottom();
             }
- 
+
             async function send() {
                 const text = userInput.value.trim();
+
                 if (!text) return;
- 
+
                 userInput.value = "";
                 sendBtn.disabled = true;
+
                 addMessage("you", text);
-                const loading = addMessage("pickle", "Thinking...", true);
- 
+
+                const loading = addMessage(
+                    "pickle",
+                    "Thinking...",
+                    true
+                );
+
                 try {
                     const res = await fetch("/chat", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
                         body: JSON.stringify({
                             message: text,
-                            session_id: sessionId,
-                        }),
+                            session_id: sessionId
+                        })
                     });
+
                     const data = await res.json();
+
                     sessionId = data.session_id;
- 
-                    // Show each tool the harness ran, above the assistant's answer
+
+                    // Show each tool the harness ran,
+                    // above the assistant's answer
                     for (const call of data.tool_calls || []) {
                         const div = document.createElement("div");
                         div.className = "tool";
+
                         const label = document.createElement("span");
                         label.className = "label";
                         label.textContent = "tool call  ";
+
                         div.appendChild(label);
+
                         div.appendChild(
                             document.createTextNode(
-                                call.name + "(" + JSON.stringify(call.args) + ")\n→ " + call.result,
-                            ),
+                                call.name +
+                                    "(" +
+                                    JSON.stringify(call.args) +
+                                    ")\n→ " +
+                                    call.result
+                            )
                         );
+
                         messages.insertBefore(div, loading);
+
                         scrollToBottom();
-                        if (call.name === "find_pickleball_courts") {
-                            addLocations(call.result, loading);
+
+                        if (
+                            call.name ===
+                            "find_pickleball_courts"
+                        ) {
+                            addLocations(
+                                call.result,
+                                loading
+                            );
                         }
                     }
-                    loading.querySelector(".content").textContent =
-                        data.response;
+
+                    loading.querySelector(
+                        ".content"
+                    ).textContent = data.response;
+
                     loading.classList.remove("loading");
+
                     scrollToBottom();
                 } catch (e) {
-                    loading.querySelector(".content").textContent =
+                    loading.querySelector(
+                        ".content"
+                    ).textContent =
                         "Error: " + e.message;
+
                     loading.classList.remove("loading");
+
                     scrollToBottom();
                 }
+
                 sendBtn.disabled = false;
                 userInput.focus();
             }
- 
+
             sendBtn.addEventListener("click", send);
+
             userInput.addEventListener("keydown", function (e) {
-                if (e.key === "Enter") send();
+                if (e.key === "Enter") {
+                    send();
+                }
             });
+
             userInput.focus();
         </script>
     </body>
