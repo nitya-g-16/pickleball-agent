@@ -33,20 +33,19 @@
             left: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 0.65rem;
+            gap: 0.5rem;
             color: #06320b;
             z-index: 10;
         }
 
         #top-left-brand svg {
-            width: 40px;
-            height: 40px;
+            width: 34px;
+            height: 34px;
         }
 
         #top-left-brand span {
-            font-size: 1.35rem;
-            font-weight: 600;
-            letter-spacing: 0.01em;
+            font-size: 1.25rem;
+            letter-spacing: 0.02em;
         }
 
         #container {
@@ -171,13 +170,7 @@
 
         .location-title {
             font-size: 1rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .location-info {
-            font-size: 0.85rem;
             margin-bottom: 0.75rem;
-            opacity: 0.75;
         }
 
         .location-map {
@@ -217,54 +210,49 @@
 
     <!-- Pickle logo -->
     <div id="top-left-brand">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-
-            <!-- Paddle -->
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+            <!-- paddle -->
             <path
-                d="M20 8
-                   C15 10 11 15 10 21
-                   C8 30 12 39 19 46
-                   L26 53
-                   C29 56 34 56 37 53
-                   L42 48
-                   C45 45 45 40 42 37
-                   L35 30
-                   C32 27 28 25 25 22
-                   C22 19 22 15 24 12
-                   C25 9 23 7 20 8Z"
+                d="M8 5
+                   C4 9, 4 17, 8 21
+                   C11 24, 15 24, 18 21
+                   C22 17, 22 10, 18 6
+                   C15 3, 11 3, 8 5Z"
                 fill="none"
                 stroke="#06320b"
-                stroke-width="2.5"
-                stroke-linejoin="round"
+                stroke-width="1.8"
             />
 
-            <!-- Paddle handle -->
+            <!-- paddle holes -->
+            <circle cx="10" cy="10" r="1" fill="#06320b"/>
+            <circle cx="14" cy="8" r="1" fill="#06320b"/>
+            <circle cx="17" cy="12" r="1" fill="#06320b"/>
+            <circle cx="10" cy="15" r="1" fill="#06320b"/>
+            <circle cx="15" cy="17" r="1" fill="#06320b"/>
+
+            <!-- paddle handle -->
             <path
-                d="M34 38 L46 50"
-                fill="none"
+                d="M14 22 L18 34"
                 stroke="#06320b"
-                stroke-width="5"
+                stroke-width="3"
                 stroke-linecap="round"
             />
 
-            <!-- Pickleball -->
+            <!-- pickleball -->
             <circle
-                cx="45"
-                cy="19"
-                r="8"
+                cx="29"
+                cy="15"
+                r="7"
                 fill="none"
                 stroke="#06320b"
-                stroke-width="2.5"
+                stroke-width="1.8"
             />
 
-            <!-- Ball holes -->
-            <circle cx="42" cy="16" r="1.3" fill="#06320b"/>
-            <circle cx="48" cy="16" r="1.3" fill="#06320b"/>
-            <circle cx="40" cy="20" r="1.3" fill="#06320b"/>
-            <circle cx="46" cy="21" r="1.3" fill="#06320b"/>
-            <circle cx="50" cy="20" r="1.3" fill="#06320b"/>
-            <circle cx="44" cy="24" r="1.3" fill="#06320b"/>
-
+            <circle cx="26.5" cy="12" r="1" fill="#06320b"/>
+            <circle cx="31" cy="11" r="1" fill="#06320b"/>
+            <circle cx="33" cy="15" r="1" fill="#06320b"/>
+            <circle cx="27" cy="17" r="1" fill="#06320b"/>
+            <circle cx="31" cy="19" r="1" fill="#06320b"/>
         </svg>
 
         <span>Pickle</span>
@@ -302,6 +290,9 @@
 
         /*
          * Keep the newest content visible.
+         *
+         * requestAnimationFrame makes sure the browser has updated
+         * the layout before we calculate scrollHeight.
          */
         function scrollToBottom() {
             requestAnimationFrame(() => {
@@ -346,7 +337,7 @@
 
                 card.innerHTML = `
                     <div class="tool-name">
-                        Tool: ${escapeHtml(tool.name)}
+                        Tool: ${tool.name}
                     </div>
 
                     <div>
@@ -387,17 +378,14 @@
                 return;
             }
 
-            /*
-             * find_pickleball_courts returns "sites".
-             */
-            if (!result || !Array.isArray(result.sites)) {
+            if (!result || !Array.isArray(result.courts)) {
                 return;
             }
 
             const locations = document.createElement("div");
             locations.className = "locations";
 
-            for (const court of result.sites) {
+            for (const court of result.courts) {
                 if (!court.lat_lon) {
                     continue;
                 }
@@ -409,63 +397,12 @@
                 title.className = "location-title";
                 title.textContent = court.name || "Pickleball Court";
 
-                /*
-                 * Build the information line.
-                 * Public/private is shown first.
-                 * If access is unknown, it is simply left out.
-                 */
-                const info = document.createElement("div");
-                info.className = "location-info";
-
-                const infoParts = [];
-
-                if (court.courts_at_site !== undefined) {
-                    const courtCount = court.courts_at_site === 1
-                        ? "1 court"
-                        : `${court.courts_at_site} courts`;
-
-                    infoParts.push(courtCount);
-                }
-
-                if (
-                    court.access &&
-                    court.access !== "unknown"
-                ) {
-                    infoParts.push(
-                        court.access.charAt(0).toUpperCase() +
-                        court.access.slice(1)
-                    );
-                }
-
-                if (court.distance_km !== undefined) {
-                    const miles = court.distance_km * 0.621371;
-                    infoParts.push(`${miles.toFixed(1)} mi`);
-                }
-
-                if (court.travel_minutes !== undefined) {
-                    infoParts.push(`${court.travel_minutes} min`);
-                }
-
-                info.textContent = infoParts.join(" · ");
-
-                /*
-                 * lat_lon from tools.py is "lat,lon".
-                 */
-                const [lat, lon] = String(court.lat_lon)
-                    .split(",")
-                    .map(Number);
-
-                if (
-                    !Number.isFinite(lat) ||
-                    !Number.isFinite(lon)
-                ) {
-                    continue;
-                }
-
                 const map = document.createElement("iframe");
                 map.className = "location-map";
                 map.loading = "lazy";
                 map.title = court.name || "Pickleball Court";
+
+                const [lat, lon] = court.lat_lon;
 
                 const delta = 0.005;
 
@@ -481,9 +418,7 @@
                 map.addEventListener("load", scrollToBottom);
 
                 card.appendChild(title);
-                card.appendChild(info);
                 card.appendChild(map);
-
                 locations.appendChild(card);
 
                 scrollToBottom();
@@ -496,7 +431,7 @@
         }
 
         function escapeHtml(value) {
-            return String(value)
+            return value
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -543,22 +478,19 @@
                 sessionId = data.session_id;
 
                 /*
-                 * Remove temporary loading message.
+                 * Remove the temporary loading message.
                  */
                 loading.remove();
 
                 /*
                  * Show tool calls first.
                  */
-                if (
-                    data.tool_calls &&
-                    data.tool_calls.length > 0
-                ) {
+                if (data.tool_calls && data.tool_calls.length > 0) {
                     addToolCalls(data.tool_calls);
                 }
 
                 /*
-                 * Add map cards after the tool calls.
+                 * Add the map cards after the tool calls.
                  */
                 addLocations(data.tool_calls || []);
 
