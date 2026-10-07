@@ -1,535 +1,318 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pickle</title>
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap"
-        rel="stylesheet"
-    />
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            background: #f5f1e8;
-            color: #06320b;
-            font-family: "Playfair Display", serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Pickle logo in top-left */
-        #top-left-brand {
-            position: fixed;
-            top: 1.5rem;
-            left: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #06320b;
-            z-index: 10;
-        }
-
-        #top-left-brand svg {
-            width: 34px;
-            height: 34px;
-        }
-
-        #top-left-brand span {
-            font-size: 1.25rem;
-            letter-spacing: 0.02em;
-        }
-
-        #container {
-            width: 90%;
-            max-width: 1100px;
-            border: 1.5px solid #06320b;
-            background: #f5f1e8;
-        }
-
-        #messages {
-            overflow-y: auto;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            min-height: 450px;
-            max-height: 70vh;
-        }
-
-        .message {
-            max-width: 80%;
-            line-height: 1.5;
-            font-size: 1rem;
-        }
-
-        .user {
-            align-self: flex-end;
-            text-align: right;
-        }
-
-        .assistant {
-            align-self: flex-start;
-        }
-
-        .message-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.35rem;
-            opacity: 0.65;
-        }
-
-        .message-text {
-            white-space: pre-wrap;
-        }
-
-        #input-area {
-            border-top: 1.5px solid #06320b;
-            display: flex;
-            align-items: center;
-            padding: 1rem 1.25rem;
-            gap: 1rem;
-        }
-
-        #input {
-            flex: 1;
-            border: none;
-            border-bottom: 1px solid #06320b;
-            outline: none;
-            background: transparent;
-            padding: 0.75rem 0;
-            font-family: inherit;
-            font-size: 1rem;
-            color: #06320b;
-        }
-
-        #input::placeholder {
-            color: #06320b;
-            opacity: 0.55;
-        }
-
-        #send {
-            border: 1px solid #06320b;
-            background: #06320b;
-            color: #f5f1e8;
-            padding: 0.65rem 1rem;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        #send:hover {
-            opacity: 0.9;
-        }
-
-        #send:disabled {
-            opacity: 0.5;
-            cursor: default;
-        }
-
-        .tool-card {
-            background: #ebe6d8;
-            border-left: 3px solid #06320b;
-            padding: 0.8rem 1rem;
-            font-size: 0.85rem;
-            width: 100%;
-        }
-
-        .tool-name {
-            font-weight: 600;
-            margin-bottom: 0.3rem;
-        }
-
-        .tool-result {
-            white-space: pre-wrap;
-            opacity: 0.8;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .locations {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            width: 100%;
-        }
-
-        .location-card {
-            border: 1px solid #06320b;
-            background: #f5f1e8;
-            padding: 1rem;
-        }
-
-        .location-title {
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .location-map {
-            width: 100%;
-            height: 250px;
-            border: none;
-            display: block;
-        }
-
-        .loading {
-            opacity: 0.6;
-            font-style: italic;
-        }
-
-        @media (max-width: 700px) {
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pickle</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: "Playfair Display", Georgia, serif;
+                font-weight: 500;
+                background: #f5f1e8;
+                color: #1a1a1a;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 3rem 1rem;
+            }
+            input,
+            button {
+                font-family: inherit;
+                font-weight: 500;
+            }
             #container {
-                width: 95%;
+                width: 100%;
+                max-width: 1100px;
+                display: flex;
+                flex-direction: column;
+                border: 1.5px solid #06320b;
+                background: #f5f1e8;
             }
-
             #messages {
-                padding: 1.25rem;
+                overflow-y: auto;
+                padding: 2rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                min-height: 450px;
+                max-height: 70vh;
             }
-
-            .message {
-                max-width: 90%;
+            .msg {
+                line-height: 1.5;
+                max-width: 80%;
             }
-
-            #top-left-brand {
-                top: 1rem;
-                left: 1rem;
+            .msg.user {
+                align-self: flex-end;
+                text-align: right;
             }
-        }
-    </style>
-</head>
-
-<body>
-
-    <!-- Pickle logo -->
-    <div id="top-left-brand">
-        <svg viewBox="0 0 40 40" aria-hidden="true">
-            <!-- paddle -->
-            <path
-                d="M8 5
-                   C4 9, 4 17, 8 21
-                   C11 24, 15 24, 18 21
-                   C22 17, 22 10, 18 6
-                   C15 3, 11 3, 8 5Z"
-                fill="none"
-                stroke="#06320b"
-                stroke-width="1.8"
-            />
-
-            <!-- paddle holes -->
-            <circle cx="10" cy="10" r="1" fill="#06320b"/>
-            <circle cx="14" cy="8" r="1" fill="#06320b"/>
-            <circle cx="17" cy="12" r="1" fill="#06320b"/>
-            <circle cx="10" cy="15" r="1" fill="#06320b"/>
-            <circle cx="15" cy="17" r="1" fill="#06320b"/>
-
-            <!-- paddle handle -->
-            <path
-                d="M14 22 L18 34"
-                stroke="#06320b"
-                stroke-width="3"
-                stroke-linecap="round"
-            />
-
-            <!-- pickleball -->
-            <circle
-                cx="29"
-                cy="15"
-                r="7"
-                fill="none"
-                stroke="#06320b"
-                stroke-width="1.8"
-            />
-
-            <circle cx="26.5" cy="12" r="1" fill="#06320b"/>
-            <circle cx="31" cy="11" r="1" fill="#06320b"/>
-            <circle cx="33" cy="15" r="1" fill="#06320b"/>
-            <circle cx="27" cy="17" r="1" fill="#06320b"/>
-            <circle cx="31" cy="19" r="1" fill="#06320b"/>
-        </svg>
-
-        <span>Pickle</span>
-    </div>
-
-    <div id="container">
-
-        <div id="messages">
-            <div class="message assistant">
-                <div class="message-label">Pickle</div>
-                <div class="message-text">
-                    Hey! I can help you find pickleball courts around New York and figure out if you can make it before dark.
-                </div>
+            .msg .role {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #06320b;
+                margin-bottom: 0.25rem;
+            }
+            .msg.loading .content {
+                color: #06320b;
+            }
+            #input-area {
+                display: flex;
+                gap: 1rem;
+                padding: 1.5rem;
+                border-top: 1.5px solid #06320b;
+            }
+            #user-input {
+                flex: 1;
+                padding: 0.75rem 0;
+                border: none;
+                border-bottom: 1.5px solid #06320b;
+                background: transparent;
+                color: #1a1a1a;
+                font-size: 1rem;
+                outline: none;
+            }
+            #user-input:focus {
+                border-bottom-width: 3px;
+            }
+            button {
+                padding: 0.75rem 1.5rem;
+                background: #06320b;
+                color: #f5f1e8;
+                border: none;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                cursor: pointer;
+            }
+            .tool {
+                font-family: ui-monospace, monospace;
+                font-size: 0.75rem;
+                color: #555;
+                background: #ebe6d8;
+                border-left: 3px solid #06320b;
+                padding: 0.5rem 0.75rem;
+                margin: 0.25rem 0 0.75rem;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .tool .label {
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #06320b;
+            }
+            .locations {
+                align-self: stretch;
+                margin: 0.25rem 0 0.75rem;
+            }
+            .locations .caption {
+                display: inline-block;
+                font-size: 0.9rem;
+                color: #06320b;
+                border-bottom: 1.5px solid #06320b;
+                padding-bottom: 2px;
+                margin-bottom: 0.75rem;
+            }
+            .loc-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+            @media (max-width: 700px) {
+                .loc-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .loc-card {
+                border: 1.5px solid #06320b;
+                background: #fffdf8;
+            }
+            .loc-card iframe {
+                width: 100%;
+                height: 170px;
+                border: 0;
+                border-bottom: 1.5px solid #06320b;
+                display: block;
+            }
+            .loc-info {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.85rem;
+                line-height: 1.5;
+                color: #6b665c;
+            }
+            .loc-info b {
+                display: block;
+                font-weight: 500;
+                font-size: 0.95rem;
+                color: #06320b;
+            }
+            button:disabled {
+                opacity: 0.3;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="messages"></div>
+            <div id="input-area">
+                <input
+                    type="text"
+                    id="user-input"
+                    placeholder="Ask Pickle!"
+                    autocomplete="off"
+                />
+                <button id="send-btn">Send</button>
             </div>
         </div>
+        <script>
+            const messages = document.getElementById("messages");
+            const userInput = document.getElementById("user-input");
+            const sendBtn = document.getElementById("send-btn");
+            let sessionId = null;
 
-        <div id="input-area">
-            <input
-                id="input"
-                type="text"
-                placeholder="Ask Pickle where you can play..."
-                autocomplete="off"
-            />
-            <button id="send">Send</button>
-        </div>
-
-    </div>
-
-    <script>
-        const messages = document.getElementById("messages");
-        const input = document.getElementById("input");
-        const send = document.getElementById("send");
-
-        let sessionId = null;
-
-        /*
-         * Keep the newest content visible.
-         *
-         * requestAnimationFrame makes sure the browser has updated
-         * the layout before we calculate scrollHeight.
-         */
-        function scrollToBottom() {
-            requestAnimationFrame(() => {
+            function addMessage(role, text, isLoading = false) {
+                const div = document.createElement("div");
+                div.className =
+                    "msg " +
+                    (role === "you" ? "user" : "pickle") +
+                    (isLoading ? " loading" : "");
+                div.innerHTML =
+                    '<div class="role">' +
+                    role +
+                    '</div><div class="content">' +
+                    text +
+                    "</div>";
+                messages.appendChild(div);
                 messages.scrollTop = messages.scrollHeight;
+                return div;
+            }
 
-                setTimeout(() => {
-                    messages.scrollTop = messages.scrollHeight;
-                }, 50);
+            // Show a map card for each court site the agent found
+            function addLocations(result, before) {
+                let data;
+                try {
+                    data = JSON.parse(result);
+                } catch (e) {
+                    return;
+                }
+                if (!data.sites || !data.sites.length) return;
+
+                const wrap = document.createElement("div");
+                wrap.className = "locations";
+                const caption = document.createElement("div");
+                caption.className = "caption";
+                caption.textContent =
+                    "Here " +
+                    (data.sites.length === 1 ? "is the location" : "are the locations") +
+                    " near " +
+                    data.searched_near +
+                    ":";
+                wrap.appendChild(caption);
+
+                const grid = document.createElement("div");
+                grid.className = "loc-grid";
+                for (const site of data.sites.slice(0, 3)) {
+                    const q = encodeURIComponent(site.lat_lon);
+                    const card = document.createElement("div");
+                    card.className = "loc-card";
+
+                    const map = document.createElement("iframe");
+                    map.src = "https://maps.google.com/maps?q=" + q + "&z=16&output=embed";
+                    map.loading = "lazy";
+                    map.title = "Map of " + site.name;
+                    card.appendChild(map);
+
+                    const info = document.createElement("div");
+                    info.className = "loc-info";
+                    const name = document.createElement("b");
+                    name.textContent = site.name;
+                    info.appendChild(name);
+                    const n = site.courts_at_site;
+                    const lights =
+                        site.has_lights === "yes"
+                            ? " · lit"
+                            : site.has_lights === "no"
+                              ? " · no lights"
+                              : "";
+                    info.appendChild(
+                        document.createTextNode(
+                            site.distance_km + " km away · " + n + (n === 1 ? " court" : " courts") + lights,
+                        ),
+                    );
+                    card.appendChild(info);
+                    grid.appendChild(card);
+                }
+                wrap.appendChild(grid);
+                messages.insertBefore(wrap, before);
+            }
+
+            async function send() {
+                const text = userInput.value.trim();
+                if (!text) return;
+
+                userInput.value = "";
+                sendBtn.disabled = true;
+                addMessage("you", text);
+                const loading = addMessage("pickle", "Thinking...", true);
+
+                try {
+                    const res = await fetch("/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            message: text,
+                            session_id: sessionId,
+                        }),
+                    });
+                    const data = await res.json();
+                    sessionId = data.session_id;
+
+                    // Show each tool the harness ran, above the assistant's answer
+                    for (const call of data.tool_calls || []) {
+                        const div = document.createElement("div");
+                        div.className = "tool";
+                        const label = document.createElement("span");
+                        label.className = "label";
+                        label.textContent = "tool call  ";
+                        div.appendChild(label);
+                        div.appendChild(
+                            document.createTextNode(
+                                call.name + "(" + JSON.stringify(call.args) + ")\n→ " + call.result,
+                            ),
+                        );
+                        messages.insertBefore(div, loading);
+                        if (call.name === "find_pickleball_courts") {
+                            addLocations(call.result, loading);
+                        }
+                    }
+                    loading.querySelector(".content").textContent =
+                        data.response;
+                    loading.classList.remove("loading");
+                } catch (e) {
+                    loading.querySelector(".content").textContent =
+                        "Error: " + e.message;
+                    loading.classList.remove("loading");
+                }
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+
+            sendBtn.addEventListener("click", send);
+            userInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") send();
             });
-        }
-
-        function addMessage(role, text, isLoading = false) {
-            const div = document.createElement("div");
-            div.className = `message ${role}`;
-
-            if (isLoading) {
-                div.classList.add("loading");
-            }
-
-            div.innerHTML = `
-                <div class="message-label">
-                    ${role === "user" ? "You" : "Pickle"}
-                </div>
-                <div class="message-text"></div>
-            `;
-
-            div.querySelector(".message-text").textContent = text;
-
-            messages.appendChild(div);
-
-            scrollToBottom();
-
-            return div;
-        }
-
-        function addToolCalls(toolCalls) {
-            for (const tool of toolCalls) {
-                const card = document.createElement("div");
-                card.className = "tool-card";
-
-                const args = JSON.stringify(tool.args, null, 2);
-
-                card.innerHTML = `
-                    <div class="tool-name">
-                        Tool: ${tool.name}
-                    </div>
-
-                    <div>
-                        <strong>Arguments:</strong>
-                        <pre>${escapeHtml(args)}</pre>
-                    </div>
-
-                    <div class="tool-result">
-                        <strong>Result:</strong>
-                        <br>
-                        ${escapeHtml(String(tool.result))}
-                    </div>
-                `;
-
-                messages.appendChild(card);
-
-                scrollToBottom();
-            }
-        }
-
-        function addLocations(toolCalls) {
-            const locationTool = toolCalls.find(
-                tool => tool.name === "find_pickleball_courts"
-            );
-
-            if (!locationTool) {
-                return;
-            }
-
-            let result;
-
-            try {
-                result =
-                    typeof locationTool.result === "string"
-                        ? JSON.parse(locationTool.result)
-                        : locationTool.result;
-            } catch {
-                return;
-            }
-
-            if (!result || !Array.isArray(result.courts)) {
-                return;
-            }
-
-            const locations = document.createElement("div");
-            locations.className = "locations";
-
-            for (const court of result.courts) {
-                if (!court.lat_lon) {
-                    continue;
-                }
-
-                const card = document.createElement("div");
-                card.className = "location-card";
-
-                const title = document.createElement("div");
-                title.className = "location-title";
-                title.textContent = court.name || "Pickleball Court";
-
-                const map = document.createElement("iframe");
-                map.className = "location-map";
-                map.loading = "lazy";
-                map.title = court.name || "Pickleball Court";
-
-                const [lat, lon] = court.lat_lon;
-
-                const delta = 0.005;
-
-                map.src =
-                    `https://www.openstreetmap.org/export/embed.html?` +
-                    `bbox=${lon - delta}%2C${lat - delta}%2C${lon + delta}%2C${lat + delta}` +
-                    `&layer=mapnik&marker=${lat}%2C${lon}`;
-
-                /*
-                 * The iframe changes the height of the page after
-                 * it finishes loading, so scroll again here.
-                 */
-                map.addEventListener("load", scrollToBottom);
-
-                card.appendChild(title);
-                card.appendChild(map);
-                locations.appendChild(card);
-
-                scrollToBottom();
-            }
-
-            if (locations.children.length > 0) {
-                messages.appendChild(locations);
-                scrollToBottom();
-            }
-        }
-
-        function escapeHtml(value) {
-            return value
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        async function sendMessage() {
-            const text = input.value.trim();
-
-            if (!text) {
-                return;
-            }
-
-            input.value = "";
-            send.disabled = true;
-
-            addMessage("user", text);
-
-            const loading = addMessage(
-                "assistant",
-                "Finding courts...",
-                true
-            );
-
-            try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        message: text,
-                        session_id: sessionId
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                sessionId = data.session_id;
-
-                /*
-                 * Remove the temporary loading message.
-                 */
-                loading.remove();
-
-                /*
-                 * Show tool calls first.
-                 */
-                if (data.tool_calls && data.tool_calls.length > 0) {
-                    addToolCalls(data.tool_calls);
-                }
-
-                /*
-                 * Add the map cards after the tool calls.
-                 */
-                addLocations(data.tool_calls || []);
-
-                /*
-                 * Finally show Pickle's response.
-                 */
-                addMessage("assistant", data.response);
-
-                scrollToBottom();
-
-            } catch (error) {
-                loading.remove();
-
-                addMessage(
-                    "assistant",
-                    `Sorry, something went wrong: ${error.message}`
-                );
-
-                scrollToBottom();
-            }
-
-            send.disabled = false;
-            input.focus();
-        }
-
-        send.addEventListener("click", sendMessage);
-
-        input.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
-        });
-
-        /*
-         * Also keep the newest message visible if the window
-         * changes size.
-         */
-        window.addEventListener("resize", scrollToBottom);
-    </script>
-
-</body>
+            userInput.focus();
+        </script>
+    </body>
 </html>
