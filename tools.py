@@ -71,9 +71,15 @@ def _resolve(place: str) -> tuple[float, float, str]:
 
 def _km(lat1, lon1, lat2, lon2) -> float:
     p = math.pi / 180
-    a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 - lon2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2
-    return 12742 * math.asin(math.sqrt(a))
-
+    a = (
+        0.5
+        - math.cos((lat2 - lat1) * p) / 2
+        + math.cos(lat1 * p)
+        * math.cos(lat2 * p)
+        * (1 - math.cos((lon2 - lon1) * p))
+        / 2
+    )
+    return 12742 * math.asin(math.sqrt(max(0, a)))
 
 def _pt(el) -> tuple:
     c = el if "lat" in el else el.get("center", {})
