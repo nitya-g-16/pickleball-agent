@@ -13,6 +13,7 @@ NOMINATIM = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_REVERSE = "https://nominatim.openstreetmap.org/reverse"
 OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 ]
 FORECAST = "https://api.open-meteo.com/v1/forecast"
@@ -91,11 +92,14 @@ def _pt(el) -> tuple:
     return c.get("lat"), c.get("lon")
  
  
-def _overpass(query: str) -> list:
-    """Try each Overpass server in turn. Returns elements, or None if all fail."""
+def _overpass(query: str, timeout: int = 12) -> list:
+    """Try each Overpass server in turn. Returns elements, or None if all fail.
+
+    Short timeouts so one slow server can't stall the whole request.
+    """
     for url in OVERPASS_URLS:
         try:
-            return requests.post(url, data={"data": query}, headers=HEADERS, timeout=25).json()["elements"]
+            return requests.post(url, data={"data": query}, headers=HEADERS, timeout=timeout).json()["elements"]
         except SERVICE_ERRORS:
             continue
     return None
@@ -179,7 +183,10 @@ def _park_name(lat: float, lon: float):
         f'[out:json][timeout:15];nwr(around:150,{lat},{lon})["leisure"="park"]["name"];out tags;',
     ]
     for q in queries:
-        for el in _overpass(q) or []:
+        elements = _overpass(q, timeout=5)
+        if elements is None:  # servers are slow or down; don't keep waiting, fall back to street name
+            return None
+        for el in elements:
             name = el.get("tags", {}).get("name")
             if name:
                 return name

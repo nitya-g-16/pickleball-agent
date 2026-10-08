@@ -1,3 +1,4 @@
+
 import json
 import os
 import uuid
@@ -28,7 +29,7 @@ SYSTEM_PROMPT = (
     "closest by travel distance and how far it is. Then, if is_dark_now is true, say it is late out and already dark, "
     "give the time sunset was, and give tomorrow's sunrise and sunset. If it is still light, say roughly how "
     "much daylight is left. Mention lights only if known. If a travel time is an estimate, say it "
-    "is approximate. Write plain text only, with no markdown. Keep replies to 2 or 3 sentences."
+    "is approximate. If a tool returns an error, do not call it again with the same arguments; tell the user what went wrong and to try again in a moment. Write plain text only, with no markdown. Keep replies to 2 or 3 sentences."
 )
  
 MAX_TOOL_ROUNDS = 5
@@ -150,3 +151,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 8000))
     )
+ 
