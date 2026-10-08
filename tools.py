@@ -22,7 +22,7 @@ PROFILES = {"walking": "routed-foot", "biking": "routed-bike", "driving": "route
 FALLBACK_KMH = {"walking": 5, "biking": 15, "driving": 25}
 NUM_SITES = 3
 CANDIDATES = 6  # nearest sites (straight line) that get a real travel distance before picking the final 3
-MAX_RADIUS_KM = 10
+MAX_RADIUS_MILES = 6
 UNNAMED = "Unnamed pickleball courts"
 _name_cache = {}
  
@@ -81,6 +81,11 @@ def _km(lat1, lon1, lat2, lon2) -> float:
     )
     return 12742 * math.asin(math.sqrt(max(0, a)))
  
+def _mi(km: float) -> float:
+    """Kilometers to miles."""
+    return km * 0.621371
+
+
 def _pt(el) -> tuple:
     c = el if "lat" in el else el.get("center", {})
     return c.get("lat"), c.get("lon")
@@ -151,7 +156,7 @@ def _group_sites(elements: list, lat: float, lon: float) -> list:
             sites.append({
                 "name": tags.get("name", UNNAMED),
                 "lat_lon": f"{pt[0]},{pt[1]}",
-                "distance_km": round(_km(lat, lon, *pt), 2),
+                "distance_miles": round(_mi(_km(lat, lon, *pt)), 2),
                 "courts_at_site": 1,
                 "has_lights": tags.get("lit", "unknown"),
                 "surface": tags.get("surface", "unknown"),
@@ -214,8 +219,8 @@ def _nearby_name(lat: float, lon: float):
     return name
  
  
-def find_pickleball_courts(area: str, radius_km: float = 3, mode: str = "walking") -> str:
-    """Find the 3 pickleball sites with the shortest travel distance, widening the search up to 10 km if needed."""
+def find_pickleball_courts(area: str, radius_miles: float = 2, mode: str = "walking") -> str:
+    """Find the 3 pickleball sites with the shortest travel distance, widening the search up to 6 miles if needed."""
     if mode not in PROFILES:
         return _err(f"mode must be one of {list(PROFILES)}, got '{mode}'.")
     try:
@@ -231,22 +236,22 @@ def find_pickleball_courts(area: str, radius_km: float = 3, mode: str = "walking
             "Pickle is currently limited to New York City. Please enter an NYC neighborhood, park, or address."
         )
  
-    radius_km = min(max(radius_km, 0.5), MAX_RADIUS_KM)
+    radius_miles = min(max(radius_miles, 0.3), MAX_RADIUS_MILES)
     sites = []
     while True:
-        query = f'[out:json][timeout:20];nwr["sport"="pickleball"](around:{int(radius_km * 1000)},{lat},{lon});out center 300;'
+        query = f'[out:json][timeout:20];nwr["sport"="pickleball"](around:{int(radius_miles * 1609)},{lat},{lon});out center 300;'
         elements = _overpass(query)
         if elements is None:
             if not sites:
                 return _err("The court database is busy right now. Wait a few seconds and try again.")
             break
         sites = _group_sites(elements, lat, lon)
-        if len(sites) >= NUM_SITES or radius_km >= MAX_RADIUS_KM:
+        if len(sites) >= NUM_SITES or radius_miles >= MAX_RADIUS_MILES:
             break
-        radius_km = min(radius_km * 2, MAX_RADIUS_KM)
+        radius_miles = min(radius_miles * 2, MAX_RADIUS_MILES)
  
     if not sites:
-        return _err(f"No pickleball courts found within {MAX_RADIUS_KM} km of {label}. OpenStreetMap coverage is incomplete; try a nearby neighborhood or borough instead.")
+        return _err(f"No pickleball courts found within {MAX_RADIUS_MILES} miles of {label}. OpenStreetMap coverage is incomplete; try a nearby neighborhood or borough instead.")
  
     # Straight-line distance only shortlists candidates. Rank them by real travel distance.
     candidates = sites[:CANDIDATES]
@@ -254,14 +259,14 @@ def find_pickleball_courts(area: str, radius_km: float = 3, mode: str = "walking
     def add_travel(site):
         slat, slon = (float(x) for x in site["lat_lon"].split(","))
         minutes, km, estimated = _route(mode, lat, lon, slat, slon)
-        site["straight_line_km"] = site["distance_km"]
-        site["distance_km"] = round(km, 2)
+        site["straight_line_miles"] = site["distance_miles"]
+        site["distance_miles"] = round(_mi(km), 2)
         site["travel_minutes"] = round(minutes)
         site["travel_is_estimate"] = estimated
  
     with ThreadPoolExecutor(max_workers=CANDIDATES) as pool:
         list(pool.map(add_travel, candidates))
-    sites = sorted(candidates, key=lambda s: s["distance_km"])
+    sites = sorted(candidates, key=lambda s: s["distance_miles"])
  
     for site in sites[:NUM_SITES]:
         if site["name"] == UNNAMED:
@@ -269,7 +274,7 @@ def find_pickleball_courts(area: str, radius_km: float = 3, mode: str = "walking
             site["name"] = _nearby_name(float(lat_s), float(lon_s)) or "Pickleball courts"
  
     result = {"searched_near": label, "travel_mode": mode, "ranked_by": f"{mode} travel distance, not straight-line",
-              "search_radius_km": radius_km, "sites": sites[:NUM_SITES]}
+              "search_radius_miles": round(radius_miles, 1), "sites": sites[:NUM_SITES]}
     try:
         s = _sun(lat, lon)
         result.update({
@@ -350,9 +355,8 @@ def get_distance_to_court(start_location: str, court_location: str, mode: str = 
     minutes, dist_km, estimated = _route(mode, slat, slon, clat, clon)
     return json.dumps({
         "from": slabel, "to": clabel, "mode": mode,
-        "distance_km": round(dist_km, 2),
-        "distance_miles": round(dist_km * 0.621371, 2),
-        "straight_line_km": round(_km(slat, slon, clat, clon), 2),
+        "distance_miles": round(_mi(dist_km), 2),
+        "straight_line_miles": round(_mi(_km(slat, slon, clat, clon)), 2),
         "travel_minutes": round(minutes),
         "travel_time_is_estimate": estimated,
     })
@@ -387,7 +391,7 @@ def can_i_play_before_dark(start_location: str, court_location: str, mode: str =
     return json.dumps({
         "from": slabel, "to": clabel, "mode": mode,
         "travel_minutes": round(minutes),
-        "distance_km": round(dist_km, 1),
+        "distance_miles": round(_mi(dist_km), 1),
         "travel_time_is_estimate": estimated,
         "current_local_time": _clock(now),
         "arrive_at_local": _clock(arrive),
@@ -405,9 +409,9 @@ def _tool(name, desc, props, required):
  
 TOOLS = [
     _tool("find_pickleball_courts",
-          "Find the 3 pickleball sites (groups of courts) with the shortest TRAVEL distance (by street route, not straight-line) from a place, closest first, with a name, distance_km, travel_minutes, number of courts, lights, surface, public/private access, reservation or scheduling information, booking URL, opening hours, and fee when available. Do not guess unknown information. Also returns the current local time, today's sunset, tomorrow's sunrise and sunset, and is_dark_now. Automatically widens the search up to 10 km if fewer than 3 are nearby. Returns each site's lat_lon, which can be passed to can_i_play_before_dark.",
+          "Find the 3 pickleball sites (groups of courts) with the shortest TRAVEL distance (by street route, not straight-line) from a place, closest first, with a name, distance_miles, travel_minutes, number of courts, lights, surface, public/private access, reservation or scheduling information, booking URL, opening hours, and fee when available. Do not guess unknown information. Also returns the current local time, today's sunset, tomorrow's sunrise and sunset, and is_dark_now. Automatically widens the search up to 6 miles if fewer than 3 are nearby. Returns each site's lat_lon, which can be passed to can_i_play_before_dark.",
           {"area": {"type": "string", "description": "Neighborhood, park or address, e.g. 'Upper West Side, New York'"},
-           "radius_km": {"type": "number", "description": "Starting search radius in km (0.5 to 10). Default 3."},
+           "radius_miles": {"type": "number", "description": "Starting search radius in miles (0.3 to 6). Default 2."},
            "mode": {"type": "string", "enum": list(PROFILES), "description": "How the user travels, used to rank courts by travel distance. Default walking."}},
           ["area"]),
     _tool("get_sun_times",
@@ -415,7 +419,7 @@ TOOLS = [
           {"location": {"type": "string", "description": "Place name or 'lat,lon'"}},
           ["location"]),
     _tool("get_distance_to_court",
-          "Get the travel distance (km and miles) and travel time between where the user is and a specific court. Use when the user asks how far a court is from them or from an address. Does not look at sunset; use can_i_play_before_dark for that.",
+          "Get the travel distance (in miles) and travel time between where the user is and a specific court. Use when the user asks how far a court is from them or from an address. Does not look at sunset; use can_i_play_before_dark for that.",
           {"start_location": {"type": "string", "description": "Where the user is (address, place or 'lat,lon')"},
            "court_location": {"type": "string", "description": "The court: a name, address, or the 'lat,lon' from find_pickleball_courts"},
            "mode": {"type": "string", "enum": list(PROFILES), "description": "How the user travels. Default walking."}},
